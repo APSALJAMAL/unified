@@ -17,18 +17,49 @@ datasource db {
  
 }
 
-model User {
-  id            Int      @id @default(autoincrement())
-  full_name     String
-  mobile_number String   @unique
-  aadhar_number String   @unique
-  password      String
-  role          Role     @default(USER)
-  created_at    DateTime @default(now())
-}
-
 enum Role {
   USER
   ADMIN
   OWNER
+}
+
+enum IssueType {
+  POTHOLE
+  GARBAGE_DUMP
+  STREETLIGHT_OUTAGE
+  WATER_LEAKAGE
+  ILLEGAL_PARKING
+  TRAFFIC_SIGNAL_ISSUE
+  TRANSPORT_ISSUE
+  NOISE_POLLUTION
+  OTHER
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  full_name     String
+  mobile_number String        @unique
+  aadhar_number String        @unique
+  password      String
+  role          Role          @default(USER)
+  district      String?       // ✅ added
+  created_at    DateTime      @default(now())
+
+  reports       IssueReport[] // ✅ relation
+}
+
+model IssueReport {
+  id          Int        @id @default(autoincrement())
+  description String
+  location    String
+  type        IssueType
+
+  photo       String?    // Cloudinary URL (older model)
+  video       String?    // Cloudinary URL (older model)
+
+  userId      Int        // ✅ foreign key
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
