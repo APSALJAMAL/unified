@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
+import { AuthRequest } from "../types/auth";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
@@ -106,3 +107,60 @@ export const signoutUser = (_: Request, res: Response) => {
   res.json({ message: "Signed out (client should delete token)" });
 };
 
+
+export const getCurrentUser = async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: {
+      id: true,
+      full_name: true,
+      mobile_number: true,
+      aadhar_number: true,
+      role: true,
+      district: true,
+      created_at: true,
+    },
+  });
+
+  res.json(user);
+};
+
+
+
+
+export const updateDistrict = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const userId = req.user.id;
+    const { district } = req.body;
+
+    if (!district || typeof district !== "string") {
+      return res.status(400).json({ message: "District is required" });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { district },
+      select: {
+        id: true,
+        full_name: true,
+        district: true,
+        role: true,
+      },
+    });
+
+    res.json({
+      message: "District updated successfully",
+      user,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
